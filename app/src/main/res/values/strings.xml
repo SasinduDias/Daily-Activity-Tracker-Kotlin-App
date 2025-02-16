@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Personal Details App</string>
+    <string name="sign_in_name">LogIn</string>
+    <string name="sign_up_name">SignUp</string>
+    <string name="home_name">Home</string>
+    <string name="settings_name">Profile</string>
+    <string name="details_name">Other Details</string>
+</resources>
