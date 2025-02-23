@@ -5,4 +5,5 @@
     <string name="home_name">Home</string>
     <string name="settings_name">Profile</string>
     <string name="details_name">Other Details</string>
+    <string name="add_expense_name">Expense Name</string>
 </resources>

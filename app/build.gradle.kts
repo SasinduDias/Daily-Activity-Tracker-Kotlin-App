@@ -52,6 +52,11 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.auth)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.firestore)
+    implementation(libs.androidx.room.common)
+    implementation(libs.support.annotations)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -63,6 +68,19 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("com.google.accompanist:accompanist-navigation-animation:0.30.1")
+
+    implementation("androidx.compose.material3:material3:1.4.0-alpha07")
+    implementation("androidx.compose.material:material-icons-extended:1.5.0")
+
+    //coil library
+    implementation(libs.coil.compose)
+    implementation(libs.firebase.storage.ktx.v2021)
+
+   //Room
+//    implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")
+//    ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
+//    implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
+
 
 
 }
