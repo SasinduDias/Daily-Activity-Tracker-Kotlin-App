@@ -1,4 +1,6 @@
+import android.content.Context
 import android.net.Uri
+import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,16 +23,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.NoteAlt
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -39,7 +39,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,7 +58,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -68,10 +66,13 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.personaldetailsapp.AuthState
 import com.example.personaldetailsapp.AuthViewModel
+import com.example.personaldetailsapp.Expenses
 import com.example.personaldetailsapp.MainActivity
 import com.example.personaldetailsapp.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 
 @Composable
@@ -116,7 +117,8 @@ fun HomeScreen(
 @Composable
 fun HomeContent(authViewModel: AuthViewModel) {
     var expenseName by rememberSaveable { mutableStateOf("") }
-
+    var expenseAmount by rememberSaveable { mutableStateOf("") }
+    val contextHome = LocalContext.current
     Column(
         modifier = Modifier
             .padding(16.dp, 16.dp)
@@ -152,13 +154,98 @@ fun HomeContent(authViewModel: AuthViewModel) {
             )
         )
 
-        Demo_ExposedDropdownMenuBox()
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = stringResource(id = R.string.add_expense_amount_name),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+
+        ExpensesTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = expenseAmount,
+            label = "",
+            onValueChange = { expenseAmount = it },
+            placeholder = "Please enter expense amount",
+            leadingIcon = {
+                Icon(Icons.Default.AttachMoney, contentDescription = "Amount")
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            )
+        )
+
+        Button(
+            onClick = {
+                // on below line we are validating user input parameters.
+                if (TextUtils.isEmpty(expenseName)) {
+                    // Toast.makeText(context, "Please enter expense name", Toast.LENGTH_SHORT).show()
+                } else if (TextUtils.isEmpty(expenseAmount)) {
+                    // Toast.makeText(context, "Please enter course Duration", Toast.LENGTH_SHORT)
+                    //   .show()
+                } else {
+                    // on below line adding data to
+                    // firebase firestore database.
+                    addDataToFirebase(
+                        expenseName,
+                        expenseAmount,
+                        contextHome,
+                        authViewModel
+                    )
+                }
+            },
+            // on below line we are
+            // adding modifier to our button.
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // on below line we are adding text for our button
+            Text(text = "Add Data", modifier = Modifier.padding(8.dp))
+        }
+
+        // Demo_ExposedDropdownMenuBox()
 
 
 //        Text(text = "🏠 Home Page", fontSize = 32.sp)
 //        TextButton(onClick = { authViewModel.signout() }) {
 //            Text(text = "Sign out")
         //}
+    }
+}
+
+fun addDataToFirebase(
+    expensesName: String,
+    expensesAmount: String,
+    context: Context,
+    authViewModel: AuthViewModel
+) {
+    val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    //creating a collection reference for our Firebase Firestore database.
+    val dbCourses: CollectionReference = db.collection("Expences")
+    //adding our data to our courses object class.
+
+    val courses = Expenses(
+        expensesName,
+        authViewModel.firebaseUser?.uid.toString(),
+        expensesAmount
+    )
+
+    //below method is use to add data to Firebase Firestore.
+    dbCourses.add(courses).addOnSuccessListener {
+        // after the data addition is successful
+        // we are displaying a success toast message.
+        Toast.makeText(
+            context,
+            "Your Course has been added to Firebase Firestore",
+            Toast.LENGTH_SHORT
+        ).show()
+
+    }.addOnFailureListener { e ->
+        // this method is called when the data addition process is failed.
+        // displaying a toast message when data addition is failed.
+        Toast.makeText(context, "Fail to add course \n$e", Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -170,8 +257,8 @@ fun ExpensesTextField(
     placeholder: String,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     leadingIcon: @Composable (() -> Unit)? = null,
-    trailingIcon:@Composable (() -> Unit)? = null,
-    label:String,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    label: String,
 ) {
 
     OutlinedTextField(
@@ -183,8 +270,6 @@ fun ExpensesTextField(
         trailingIcon = trailingIcon,
     )
 }
-
-
 
 
 @Composable
