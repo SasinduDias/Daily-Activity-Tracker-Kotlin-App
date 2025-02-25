@@ -63,6 +63,5 @@ class MainActivity : ComponentActivity() {
         SignUp(title = R.string.sign_up_name),
         Home(title = R.string.home_name),
         Settings(title = R.string.settings_name),
-        Details(title = R.string.details_name)
     }
 }
