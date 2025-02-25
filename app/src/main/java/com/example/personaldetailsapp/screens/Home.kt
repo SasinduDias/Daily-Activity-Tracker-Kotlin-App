@@ -3,6 +3,7 @@ import android.text.TextUtils
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -13,12 +14,15 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +37,7 @@ import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.NoteAlt
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -53,10 +58,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -68,10 +75,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -367,11 +376,7 @@ fun DatePickerModal(
         DatePicker(state = datePickerState)
     }
 }
-//
-//fun convertMillisToDate(millis: Long): String {
-//    val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
-//    return formatter.format(Date(millis))
-//}
+
 
 @Composable
 fun ExpensesTextField(
@@ -403,8 +408,7 @@ fun SummaryContent(authViewModel: AuthViewModel) {
 
     Column(
         modifier = Modifier
-            .padding(16.dp, 16.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(16.dp, 16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
@@ -415,28 +419,195 @@ fun SummaryContent(authViewModel: AuthViewModel) {
             fontWeight = FontWeight.Bold
         )
 
-        val chartColors = listOf(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.surfaceContainerLow,
-            MaterialTheme.colorScheme.secondary,
-            MaterialTheme.colorScheme.surfaceDim,
-            MaterialTheme.colorScheme.inverseOnSurface,
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.background,
-            MaterialTheme.colorScheme.tertiary,
-            MaterialTheme.colorScheme.outline
-        )
+        val courseList = remember { mutableStateListOf<Expenses?>() }
+        val context = LocalContext.current
 
-        val chartValues = listOf(60f, 10f, 20f,30f, 10f, 67f,44f, 100f)
+        LaunchedEffect(Unit) {
+            val db = FirebaseFirestore.getInstance()
 
-        PieChart(
-            modifier = Modifier.padding(20.dp),
-            colors = chartColors,
-            inputValues = chartValues,
-            textColor = MaterialTheme.colorScheme.primary
-        )
-        TextButton(onClick = { authViewModel.signout() }) {
-            Text(text = "Sign out")
+            db.collection("Expenses").get()
+                .addOnSuccessListener { queryDocumentSnapshots ->
+                    if (!queryDocumentSnapshots.isEmpty) {
+                        val list = queryDocumentSnapshots.documents
+                        for (d in list) {
+                            val expense: Expenses? = d.toObject(Expenses::class.java)
+                            courseList.add(expense)
+                        }
+                    } else {
+                        Toast.makeText(context, "No data found in Database", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(context, "Failed to get data: $e", Toast.LENGTH_SHORT).show()
+                }
+        }
+
+        // on below line we are calling method to display UI
+        if(!courseList.isEmpty()) {
+            firebaseUI(LocalContext.current, courseList)
+        }
+
+
+//
+//        val chartColors = listOf(
+//
+////            Color(0xFF2196F3), // Blue
+////            Color(0xFFFF9800), // Orange
+////            Color(0xFF4CAF50)
+//
+//            MaterialTheme.colorScheme.primary,
+//            MaterialTheme.colorScheme.surfaceContainerLow,
+//            MaterialTheme.colorScheme.secondary,
+//            MaterialTheme.colorScheme.surfaceDim,
+//            MaterialTheme.colorScheme.inverseOnSurface,
+//            MaterialTheme.colorScheme.tertiaryContainer,
+//            MaterialTheme.colorScheme.background,
+//            MaterialTheme.colorScheme.tertiary,
+//            MaterialTheme.colorScheme.outline
+//        )
+//
+//        val chartValues = listOf(60f, 10f, 20f, 30f, 10f, 67f, 44f, 100f)
+//
+//        PieChart(
+//            modifier = Modifier.padding(20.dp),
+//            colors = chartColors,
+//            inputValues = chartValues,
+//            textColor = MaterialTheme.colorScheme.primary
+//        )
+//        TextButton(onClick = { authViewModel.signout() }) {
+//            Text(text = "Sign out")
+//        }
+//
+
+
+    }
+}
+
+
+
+@Composable
+fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
+
+    // on below line creating a column
+    // to display our retrieved list.
+    Column(
+        // adding modifier for our column
+//        modifier = Modifier
+//            .fillMaxHeight()
+//            .fillMaxWidth()
+//            .background(Color.White),
+        // on below line adding vertical and
+        // horizontal alignment for column.
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // on below line we are
+        // calling lazy column
+        // for displaying listview.
+        LazyColumn {
+            // on below line we are setting data
+            // for each item of our listview.
+            itemsIndexed(courseList) { index, item ->
+                // on below line we are creating
+                // a card for our list view item.
+                Card(
+                    onClick = {
+                        // inside on click we are
+                        // displaying the toast message.
+                        Toast.makeText(
+                            context,
+                            courseList[index]?.description + " selected..",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    },
+                    // on below line we are adding
+                    // padding from our all sides.
+                    modifier = Modifier.padding(8.dp),
+
+                    // on below line we are adding
+                    // elevation for the card.
+//                    elevation = 6.dp
+                ) {
+                    // on below line we are creating
+                    // a row for our list view item.
+                    Column(
+                        // for our row we are adding modifier
+                        // to set padding from all sides.
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                    ) {
+                        // on below line inside row we are adding spacer
+                        Spacer(modifier = Modifier.width(5.dp))
+                        // on below line we are displaying course name.
+                        courseList[index]?.description?.let {
+                            Text(
+                                // inside the text on below line we are
+                                // setting text as the language name
+                                // from our modal class.
+                                text = it,
+
+                                // on below line we are adding padding
+                                // for our text from all sides.
+                                modifier = Modifier.padding(4.dp),
+
+                                // on below line we are adding
+                                // color for our text
+                                color = Color.Green,
+                                textAlign = TextAlign.Center,
+                                style = TextStyle(
+                                    fontSize = 20.sp, fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                        // adding spacer on below line.
+                        Spacer(modifier = Modifier.height(5.dp))
+
+                        // on below line displaying text for course duration
+                        courseList[index]?.category?.let {
+                            Text(
+                                // inside the text on below line we are
+                                // setting text as the language name
+                                // from our modal class.
+                                text = it,
+
+                                // on below line we are adding padding
+                                // for our text from all sides.
+                                modifier = Modifier.padding(4.dp),
+
+                                // on below line we are
+                                // adding color for our text
+                                color = Color.Black,
+                                textAlign = TextAlign.Center,
+                                style = TextStyle(
+                                    fontSize = 15.sp
+                                )
+                            )
+                        }
+                        // adding spacer on below line.
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        // on below line displaying text for course description
+                        courseList[index]?.category?.let {
+                            Text(
+                                // inside the text on below line we are
+                                // setting text as the language name
+                                // from our modal class.
+                                text = it,
+
+                                // on below line we are adding padding
+                                // for our text from all sides.
+                                modifier = Modifier.padding(4.dp),
+
+                                // on below line we are adding color for our text
+                                color = Color.Black,
+                                textAlign = TextAlign.Center,
+                                style = TextStyle(fontSize = 15.sp)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -597,7 +768,7 @@ internal fun PieChart(
                     sweepAngle = angle,
                     useCenter = true,
                     size = size,
-                    //  style = PageSize.Fill
+                   // style = PageSize.Fill
                 )
                 startAngle += angle
             }
