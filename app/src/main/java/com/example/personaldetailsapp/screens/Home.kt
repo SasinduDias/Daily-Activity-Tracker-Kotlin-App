@@ -98,6 +98,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.min
+import kotlin.collections.sumOf
+
 
 @Composable
 fun HomeScreen(
@@ -279,9 +281,9 @@ fun addDataToFirebase(
     val dbCourses: CollectionReference = db.collection("Expenses")
 
     val courses = Expenses(
-        expensesName,
-        authViewModel.firebaseUser?.uid.toString(),
         expensesAmount,
+        authViewModel.firebaseUser?.uid.toString(),
+        expensesName,
         selectedDateText,
         selectedCategoryText
     )
@@ -409,13 +411,13 @@ fun SummaryContent(authViewModel: AuthViewModel) {
     Column(
         modifier = Modifier
             .padding(16.dp, 16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.SpaceEvenly
     ) {
         Text(
             "Expenses Summary",
             color = Color.Blue,
             fontFamily = FontFamily.SansSerif,
-            fontSize = 22.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
 
@@ -434,7 +436,8 @@ fun SummaryContent(authViewModel: AuthViewModel) {
                             courseList.add(expense)
                         }
                     } else {
-                        Toast.makeText(context, "No data found in Database", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "No data found in Database", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
                 .addOnFailureListener { e ->
@@ -443,67 +446,68 @@ fun SummaryContent(authViewModel: AuthViewModel) {
         }
 
         // on below line we are calling method to display UI
-        if(!courseList.isEmpty()) {
+        if (!courseList.isEmpty()) {
+            setupGraphs(authViewModel, courseList)
             firebaseUI(LocalContext.current, courseList)
         }
-
-
-//
-//        val chartColors = listOf(
-//
-////            Color(0xFF2196F3), // Blue
-////            Color(0xFFFF9800), // Orange
-////            Color(0xFF4CAF50)
-//
-//            MaterialTheme.colorScheme.primary,
-//            MaterialTheme.colorScheme.surfaceContainerLow,
-//            MaterialTheme.colorScheme.secondary,
-//            MaterialTheme.colorScheme.surfaceDim,
-//            MaterialTheme.colorScheme.inverseOnSurface,
-//            MaterialTheme.colorScheme.tertiaryContainer,
-//            MaterialTheme.colorScheme.background,
-//            MaterialTheme.colorScheme.tertiary,
-//            MaterialTheme.colorScheme.outline
-//        )
-//
-//        val chartValues = listOf(60f, 10f, 20f, 30f, 10f, 67f, 44f, 100f)
-//
-//        PieChart(
-//            modifier = Modifier.padding(20.dp),
-//            colors = chartColors,
-//            inputValues = chartValues,
-//            textColor = MaterialTheme.colorScheme.primary
-//        )
-//        TextButton(onClick = { authViewModel.signout() }) {
-//            Text(text = "Sign out")
-//        }
-//
 
 
     }
 }
 
+@Composable
+fun setupGraphs(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expenses?>) {
+
+    val chartColors = listOf(
+
+        Color(0xFF2196F3), // Blue
+        Color(0xFFFF9800), // Orange
+        Color(0xFF4CAF50), // Green
+        Color(0xFFFFC107), // Amber
+        Color(0xFFE91E63), // Pink
+        Color(0xFF9C27B0), // Purple
+        Color(0xFF673AB7), // Deep Purple
+        Color(0xFFFF5722), // Deep Orange
+        Color(0xFF009688)  // Teal
+    )
+
+    val categorySumMap = courseList.filterNotNull().groupBy { it.category }.mapValues { entry ->
+        entry.value.sumOf { it.amount.toInt() }
+    }
+
+//    val chartValues = listOf(categorySumMap.values)
+    val chartValues: List<Int> = categorySumMap.values.map { it.toInt() }
+
+
+    PieChart(
+        modifier = Modifier.padding(20.dp),
+        colors = chartColors.take(chartValues.size),
+        inputValues = chartValues.map { it.toFloat() },
+        textColor = MaterialTheme.colorScheme.primary
+    )
+
+    TextButton(onClick = { authViewModel.signout() }) {
+        Text(text = "Sign out")
+    }
+
+}
 
 
 @Composable
 fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
 
-    // on below line creating a column
-    // to display our retrieved list.
     Column(
         // adding modifier for our column
-//        modifier = Modifier
-//            .fillMaxHeight()
-//            .fillMaxWidth()
-//            .background(Color.White),
+        modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth()
+            .background(Color.White),
         // on below line adding vertical and
         // horizontal alignment for column.
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // on below line we are
-        // calling lazy column
-        // for displaying listview.
+
         LazyColumn {
             // on below line we are setting data
             // for each item of our listview.
@@ -768,7 +772,7 @@ internal fun PieChart(
                     sweepAngle = angle,
                     useCenter = true,
                     size = size,
-                   // style = PageSize.Fill
+                    // style = PageSize.Fill
                 )
                 startAngle += angle
             }

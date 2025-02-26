@@ -76,7 +76,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.firebase.storage.ktx.v2021)
 
-   //Room
+    implementation("com.google.accompanist:accompanist-drawablepainter:0.35.0-alpha")
+
+
+    //Room
 //    implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")
 //    ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
 //    implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
