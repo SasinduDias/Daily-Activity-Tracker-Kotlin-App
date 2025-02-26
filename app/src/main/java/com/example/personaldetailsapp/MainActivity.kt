@@ -1,17 +1,18 @@
 package com.example.personaldetailsapp
 
 import HomeScreen
+import SettingScreen
 import SignInScreen
 import SignUpScreen
 import SplashScreen
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     @Composable
     fun MainNavigation() {
         val navController = rememberNavController()
@@ -61,6 +63,12 @@ class MainActivity : ComponentActivity() {
             }
             composable(route = Routes.Home.name) {
                 HomeScreen(
+                    authViewModel = authViewModel,
+                    navController = navController
+                )
+            }
+            composable(route = Routes.Settings.name) {
+                SettingScreen(
                     authViewModel = authViewModel,
                     navController = navController
                 )

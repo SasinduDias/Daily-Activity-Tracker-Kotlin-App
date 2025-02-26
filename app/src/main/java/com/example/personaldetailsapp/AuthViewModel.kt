@@ -1,6 +1,13 @@
 package com.example.personaldetailsapp
 
+import NetworkObserver
+import android.content.Context
 import android.net.Uri
+import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -64,6 +71,25 @@ class AuthViewModel : ViewModel() {
                 }
             }
     }
+
+    fun sendEmailVerification(
+        email:String,
+        context:Context) {
+            _authState.value = AuthState.Loading
+            auth.sendPasswordResetEmail(email)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        _authState.value = AuthState.Unauthenticated
+                        Toast.makeText(context, "Password reset link send to email!", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        _authState.value =
+                            AuthState.Error(task.exception?.message ?: "Failed to send verification email")
+                        Toast.makeText(context, "Please check, something went wrong !", Toast.LENGTH_SHORT).show()
+                    }
+                }
+    }
+
 
     fun signout() {
 

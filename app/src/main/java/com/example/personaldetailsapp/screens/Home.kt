@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -98,7 +99,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.min
-import kotlin.collections.sumOf
 
 
 @Composable
@@ -261,7 +261,7 @@ fun HomeContent(authViewModel: AuthViewModel) {
                 .padding(16.dp)
         ) {
             // on below line we are adding text for our button
-            Text(text = "Add Expense", modifier = Modifier.padding(8.dp))
+            Text(text = "Add Expense", modifier = Modifier.padding(8.dp), fontSize = 18.sp)
         }
     }
 }
@@ -407,18 +407,20 @@ fun ExpensesTextField(
 
 @Composable
 fun SummaryContent(authViewModel: AuthViewModel) {
-
+    val authViewModelForUser = AuthViewModel()
     Column(
         modifier = Modifier
             .padding(16.dp, 16.dp),
-        verticalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             "Expenses Summary",
-            color = Color.Blue,
+            color = Color.Black,
             fontFamily = FontFamily.SansSerif,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
         )
 
         val courseList = remember { mutableStateListOf<Expenses?>() }
@@ -427,13 +429,16 @@ fun SummaryContent(authViewModel: AuthViewModel) {
         LaunchedEffect(Unit) {
             val db = FirebaseFirestore.getInstance()
 
-            db.collection("Expenses").get()
+            db.collection("Expenses")
+                .whereEqualTo("userRef", authViewModelForUser.firebaseUser?.uid.toString())
+                .get()
                 .addOnSuccessListener { queryDocumentSnapshots ->
                     if (!queryDocumentSnapshots.isEmpty) {
                         val list = queryDocumentSnapshots.documents
+                        courseList.clear()
                         for (d in list) {
                             val expense: Expenses? = d.toObject(Expenses::class.java)
-                            courseList.add(expense)
+                            expense?.let { courseList.add(it) }
                         }
                     } else {
                         Toast.makeText(context, "No data found in Database", Toast.LENGTH_SHORT)
@@ -450,7 +455,6 @@ fun SummaryContent(authViewModel: AuthViewModel) {
             setupGraphs(authViewModel, courseList)
             firebaseUI(LocalContext.current, courseList)
         }
-
 
     }
 }
@@ -475,7 +479,6 @@ fun setupGraphs(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expe
         entry.value.sumOf { it.amount.toInt() }
     }
 
-//    val chartValues = listOf(categorySumMap.values)
     val chartValues: List<Int> = categorySumMap.values.map { it.toInt() }
 
 
@@ -497,118 +500,133 @@ fun setupGraphs(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expe
 fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
 
     Column(
-        // adding modifier for our column
         modifier = Modifier
             .fillMaxHeight()
             .fillMaxWidth()
             .background(Color.White),
-        // on below line adding vertical and
-        // horizontal alignment for column.
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         LazyColumn {
-            // on below line we are setting data
-            // for each item of our listview.
             itemsIndexed(courseList) { index, item ->
-                // on below line we are creating
-                // a card for our list view item.
                 Card(
                     onClick = {
-                        // inside on click we are
-                        // displaying the toast message.
                         Toast.makeText(
                             context,
                             courseList[index]?.description + " selected..",
                             Toast.LENGTH_SHORT
                         ).show()
                     },
-                    // on below line we are adding
-                    // padding from our all sides.
-                    modifier = Modifier.padding(8.dp),
 
-                    // on below line we are adding
-                    // elevation for the card.
-//                    elevation = 6.dp
+                    modifier = Modifier.padding(8.dp),
                 ) {
-                    // on below line we are creating
-                    // a row for our list view item.
                     Column(
-                        // for our row we are adding modifier
-                        // to set padding from all sides.
                         modifier = Modifier
                             .padding(8.dp)
                             .fillMaxWidth()
                     ) {
-                        // on below line inside row we are adding spacer
+
                         Spacer(modifier = Modifier.width(5.dp))
-                        // on below line we are displaying course name.
+
                         courseList[index]?.description?.let {
                             Text(
-                                // inside the text on below line we are
-                                // setting text as the language name
-                                // from our modal class.
                                 text = it,
-
-                                // on below line we are adding padding
-                                // for our text from all sides.
                                 modifier = Modifier.padding(4.dp),
-
-                                // on below line we are adding
-                                // color for our text
-                                color = Color.Green,
+                                color = Color.Black,
                                 textAlign = TextAlign.Center,
                                 style = TextStyle(
                                     fontSize = 20.sp, fontWeight = FontWeight.Bold
                                 )
                             )
                         }
-                        // adding spacer on below line.
+
                         Spacer(modifier = Modifier.height(5.dp))
 
-                        // on below line displaying text for course duration
-                        courseList[index]?.category?.let {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
                             Text(
-                                // inside the text on below line we are
-                                // setting text as the language name
-                                // from our modal class.
-                                text = it,
-
-                                // on below line we are adding padding
-                                // for our text from all sides.
+                                text = "Expense Category - ",
                                 modifier = Modifier.padding(4.dp),
-
-                                // on below line we are
-                                // adding color for our text
-                                color = Color.Black,
+                                color = Color.Blue,
                                 textAlign = TextAlign.Center,
                                 style = TextStyle(
                                     fontSize = 15.sp
                                 )
                             )
+
+                            courseList[index]?.category?.let {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.padding(4.dp),
+                                    color = Color.Black,
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.Bold,
+                                    style = TextStyle(
+                                        fontSize = 15.sp
+                                    )
+                                )
+                            }
                         }
-                        // adding spacer on below line.
+
                         Spacer(modifier = Modifier.width(5.dp))
 
-                        // on below line displaying text for course description
-                        courseList[index]?.category?.let {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
                             Text(
-                                // inside the text on below line we are
-                                // setting text as the language name
-                                // from our modal class.
-                                text = it,
-
-                                // on below line we are adding padding
-                                // for our text from all sides.
+                                text = "Expense Amount - ",
                                 modifier = Modifier.padding(4.dp),
-
-                                // on below line we are adding color for our text
-                                color = Color.Black,
+                                color = Color.Blue,
                                 textAlign = TextAlign.Center,
-                                style = TextStyle(fontSize = 15.sp)
+                                style = TextStyle(
+                                    fontSize = 15.sp
+                                )
                             )
+
+                            courseList[index]?.amount?.let {
+                                Text(
+                                    text = it + " LKR",
+                                    modifier = Modifier.padding(4.dp),
+                                    color = Color.Black,
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.Bold,
+                                    style = TextStyle(fontSize = 15.sp)
+                                )
+                            }
                         }
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Text(
+                                text = "Expense Date - ",
+                                modifier = Modifier.padding(4.dp),
+                                color = Color.Blue,
+                                textAlign = TextAlign.Center,
+                                style = TextStyle(
+                                    fontSize = 15.sp
+                                )
+                            )
+
+                            courseList[index]?.date?.let {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.padding(4.dp),
+                                    color = Color.Black,
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.Bold,
+                                    style = TextStyle(fontSize = 15.sp)
+                                )
+                            }
+                        }
+
                     }
                 }
             }

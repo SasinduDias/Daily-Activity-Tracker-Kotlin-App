@@ -1,3 +1,4 @@
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -5,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +57,9 @@ import com.example.personaldetailsapp.R
 fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
 
     val scrollState = rememberScrollState()
+    var context:Context = LocalContext.current
+    val networkObserver = remember { NetworkObserver(context) }
+    val isConnected by networkObserver.isConnected.observeAsState(false)
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -68,7 +74,7 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
 
     Column(
         modifier = Modifier
-            .padding(10.dp)
+            .padding(10.dp).fillMaxWidth().fillMaxHeight()
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -128,8 +134,11 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
                 )
                 LoginFooter(
                     onSignInClick = {
-                        authViewModel.login(email.value, password.value)
-                        // navController.navigate(MainActivity.Routes.Home.name)
+                        if (isConnected) {
+                            authViewModel.login(email.value, password.value)
+                        }else{
+                            Toast.makeText(context, "No Internet Connection", Toast.LENGTH_SHORT).show()
+                        }
                     },
                     enabled = authState.value != AuthState.Loading,
                     onSignUpClick = {
