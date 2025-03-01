@@ -47,18 +47,29 @@ fun SettingScreen(
     authViewModel: AuthViewModel
 ) {
     var selectedEmailAddress by rememberSaveable { mutableStateOf("") }
-    var context = LocalContext.current
+    val context = LocalContext.current
     val networkObserver = remember { NetworkObserver(context) }
     val isConnected by networkObserver.isConnected.observeAsState(false)
 
     Column(
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .padding(16.dp)
             .fillMaxHeight()
             .fillMaxWidth()
     ) {
+
+        Button(modifier = Modifier
+            .padding(16.dp)
+            .align(Alignment.End),
+            onClick = {
+                authViewModel.signout()
+                navController.navigate(MainActivity.Routes.SignIn.name)
+            }
+        ) {
+            Text(text = "Logout")
+        }
 
         Image(
             modifier = Modifier

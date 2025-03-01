@@ -35,8 +35,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.NoteAlt
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.NoteAlt
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
@@ -134,6 +136,7 @@ fun HomeScreen(
             when (selectedItem) {
                 0 -> HomeContent(authViewModel)
                 1 -> SummaryContent(authViewModel)
+                2 -> navController.navigate(MainActivity.Routes.Settings.name)
             }
         }
     }
@@ -489,10 +492,6 @@ fun setupGraphs(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expe
         textColor = MaterialTheme.colorScheme.primary
     )
 
-    TextButton(onClick = { authViewModel.signout() }) {
-        Text(text = "Sign out")
-    }
-
 }
 
 
@@ -714,10 +713,10 @@ fun BottomNavigationBar(
         tonalElevation = tonalElevation,
         windowInsets = windowInsets
     ) {
-        val items = listOf("Home", "Summary")
-        val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.NoteAlt)
+        val items = listOf("Home", "Summary","Settings")
+        val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.NoteAlt, Icons.Filled.Settings)
         val unselectedIcons =
-            listOf(Icons.Outlined.Home, Icons.Outlined.NoteAlt)
+            listOf(Icons.Outlined.Home, Icons.Outlined.NoteAlt,Icons.Outlined.Settings)
 
         items.forEachIndexed { index, item ->
             NavigationBarItem(
