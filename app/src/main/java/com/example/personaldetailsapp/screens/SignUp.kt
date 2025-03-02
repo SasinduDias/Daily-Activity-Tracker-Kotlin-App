@@ -50,6 +50,7 @@ import com.example.personaldetailsapp.AuthState
 import com.example.personaldetailsapp.AuthViewModel
 import com.example.personaldetailsapp.MainActivity
 import com.example.personaldetailsapp.R
+import es.dmoral.toasty.Toasty
 
 
 @Composable
@@ -107,11 +108,13 @@ fun SignUpScreen(navController:NavController, authViewModel: AuthViewModel) {
                 LaunchedEffect(authState.value) {
                     when (authState.value) {
                         is AuthState.Authenticated -> navController.navigate("home")
-                        is AuthState.Error -> Toast.makeText(
+                        is AuthState.Error ->
+                        Toasty.error(
                             context,
-                            (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
+                            (authState.value as AuthState.Error).message,
+                            Toast.LENGTH_SHORT,
+                            true
                         ).show()
-
                         else -> Unit
                     }
                 }
@@ -133,7 +136,12 @@ fun SignUpScreen(navController:NavController, authViewModel: AuthViewModel) {
                         if (isConnected) {
                             authViewModel.signup(email.value, password.value)
                         }else{
-                            Toast.makeText(context, "No Internet Connection", Toast.LENGTH_SHORT).show()
+                            Toasty.warning(
+                                context,
+                                "No Internet Connection",
+                                Toast.LENGTH_SHORT,
+                                true
+                            ).show()
                         }
 
                     },

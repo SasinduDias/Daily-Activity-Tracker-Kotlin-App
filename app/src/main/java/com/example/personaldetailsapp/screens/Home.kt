@@ -69,6 +69,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -97,6 +98,7 @@ import com.example.personaldetailsapp.MainActivity
 import com.example.personaldetailsapp.R
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
+import es.dmoral.toasty.Toasty
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -136,7 +138,7 @@ fun HomeScreen(
             when (selectedItem) {
                 0 -> HomeContent(authViewModel)
                 1 -> SummaryContent(authViewModel)
-                2 -> navController.navigate(MainActivity.Routes.Settings.name)
+                2 -> SettingContent(authViewModel, navController)
             }
         }
     }
@@ -226,17 +228,29 @@ fun HomeContent(authViewModel: AuthViewModel) {
         Button(
             onClick = {
                 if (TextUtils.isEmpty(expenseName)) {
-                    Toast.makeText(contextHome, "Please enter expense name!", Toast.LENGTH_SHORT)
-                        .show()
+                    Toasty.warning(
+                        contextHome,
+                        "Please enter expense name !",
+                        Toast.LENGTH_SHORT,
+                        true
+                    ).show()
                 } else if (TextUtils.isEmpty(expenseAmount)) {
-                    Toast.makeText(contextHome, "Please enter expense amount!", Toast.LENGTH_SHORT)
-                        .show()
+                    Toasty.warning(
+                        contextHome,
+                        "FPlease enter expense amount !",
+                        Toast.LENGTH_SHORT,
+                        true
+                    ).show()
                 } else if (TextUtils.isEmpty(selectedDateText)) {
-                    Toast.makeText(contextHome, "Please select a date!", Toast.LENGTH_SHORT)
+                    Toasty.warning(contextHome, "Please select a date !", Toast.LENGTH_SHORT, true)
                         .show()
                 } else if (TextUtils.isEmpty(selectedCategoryText)) {
-                    Toast.makeText(contextHome, "Please select a category !", Toast.LENGTH_SHORT)
-                        .show()
+                    Toasty.warning(
+                        contextHome,
+                        "Please select a category !",
+                        Toast.LENGTH_SHORT,
+                        true
+                    ).show()
 
                 } else {
                     // on below line adding data to
@@ -283,9 +297,11 @@ fun addDataToFirebase(
 
     val dbCourses: CollectionReference = db.collection("Expenses")
 
+    authViewModel.refreshUser()
+
     val courses = Expenses(
         expensesAmount,
-        authViewModel.firebaseUser?.uid.toString(),
+        authViewModel.firebaseUser?.email.toString(),
         expensesName,
         selectedDateText,
         selectedCategoryText
@@ -293,16 +309,14 @@ fun addDataToFirebase(
 
     dbCourses.add(courses).addOnSuccessListener {
 
-        Toast.makeText(
-            context,
-            "Expenses details has been added !",
-            Toast.LENGTH_SHORT
-        ).show()
+
+        Toasty.success(context, "Expenses details has been added !", Toast.LENGTH_SHORT, true)
+            .show()
         //set empty string to itext fields
         onSuccess()
 
     }.addOnFailureListener { e ->
-        Toast.makeText(context, "Fail to add expenses details \n$e", Toast.LENGTH_SHORT).show()
+        Toasty.error(context, "Fail to add expenses details !", Toast.LENGTH_SHORT, true).show()
     }
 }
 
@@ -407,6 +421,10 @@ fun ExpensesTextField(
     )
 }
 
+@Composable
+fun SettingContent(authViewModel: AuthViewModel, navController: NavController) {
+    SettingScreen(navController, authViewModel)
+}
 
 @Composable
 fun SummaryContent(authViewModel: AuthViewModel) {
@@ -414,7 +432,7 @@ fun SummaryContent(authViewModel: AuthViewModel) {
     Column(
         modifier = Modifier
             .padding(16.dp, 16.dp),
-        verticalArrangement = Arrangement.SpaceEvenly,
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -433,7 +451,7 @@ fun SummaryContent(authViewModel: AuthViewModel) {
             val db = FirebaseFirestore.getInstance()
 
             db.collection("Expenses")
-                .whereEqualTo("userRef", authViewModelForUser.firebaseUser?.uid.toString())
+                .whereEqualTo("email", authViewModelForUser.firebaseUser?.email.toString())
                 .get()
                 .addOnSuccessListener { queryDocumentSnapshots ->
                     if (!queryDocumentSnapshots.isEmpty) {
@@ -444,18 +462,18 @@ fun SummaryContent(authViewModel: AuthViewModel) {
                             expense?.let { courseList.add(it) }
                         }
                     } else {
-                        Toast.makeText(context, "No data found in Database", Toast.LENGTH_SHORT)
-                            .show()
+                        Toasty.warning(context, "No data found !", Toast.LENGTH_SHORT, true).show()
                     }
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(context, "Failed to get data: $e", Toast.LENGTH_SHORT).show()
+                    Toasty.error(context, "Failed to get data !", Toast.LENGTH_SHORT, true).show()
                 }
         }
 
         // on below line we are calling method to display UI
         if (!courseList.isEmpty()) {
-            setupGraphs(authViewModel, courseList)
+            //  setupGraphs(authViewModel, courseList)
+            setupBarChart(authViewModel, courseList)
             firebaseUI(LocalContext.current, courseList)
         }
 
@@ -511,11 +529,11 @@ fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
             itemsIndexed(courseList) { index, item ->
                 Card(
                     onClick = {
-                        Toast.makeText(
-                            context,
-                            courseList[index]?.description + " selected..",
-                            Toast.LENGTH_SHORT
-                        ).show()
+//                        Toast.makeText(
+//                            context,
+//                            courseList[index]?.description + " selected..",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
                     },
 
                     modifier = Modifier.padding(8.dp),
@@ -713,10 +731,10 @@ fun BottomNavigationBar(
         tonalElevation = tonalElevation,
         windowInsets = windowInsets
     ) {
-        val items = listOf("Home", "Summary","Settings")
+        val items = listOf("Home", "Summary", "Settings")
         val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.NoteAlt, Icons.Filled.Settings)
         val unselectedIcons =
-            listOf(Icons.Outlined.Home, Icons.Outlined.NoteAlt,Icons.Outlined.Settings)
+            listOf(Icons.Outlined.Home, Icons.Outlined.NoteAlt, Icons.Outlined.Settings)
 
         items.forEachIndexed { index, item ->
             NavigationBarItem(
@@ -799,6 +817,82 @@ internal fun PieChart(
     }
 
 }
+
+@Composable
+fun BarChart(
+    modifier: Modifier = Modifier,
+    colors: List<Color>,
+    inputValues: List<Float>,
+    labels: List<String>,
+    textColor: Color = MaterialTheme.colorScheme.primary
+) {
+    val maxInputValue = inputValues.maxOrNull() ?: 1f
+
+    Column(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Canvas(modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)) {
+            val barWidth = size.width / (inputValues.size * 2)
+            val maxHeight = size.height
+
+            inputValues.forEachIndexed { index, value ->
+                val barHeight = (value / maxInputValue) * maxHeight
+                drawRect(
+                    color = colors.getOrElse(index) { Color.Gray },
+                    topLeft = Offset(
+                        x = index * barWidth * 2 + barWidth / 2,
+                        y = maxHeight - barHeight
+                    ),
+                    size = Size(barWidth, barHeight)
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            labels.forEachIndexed { index, label ->
+                Text(text = label, color = textColor, fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+@Composable
+fun setupBarChart(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expenses?>) {
+    val chartColors = listOf(
+        Color(0xFF2196F3), // Blue
+        Color(0xFFFF9800), // Orange
+        Color(0xFF4CAF50), // Green
+        Color(0xFFFFC107), // Amber
+        Color(0xFFE91E63), // Pink
+        Color(0xFF9C27B0), // Purple
+        Color(0xFF673AB7), // Deep Purple
+        Color(0xFFFF5722), // Deep Orange
+        Color(0xFF009688)  // Teal
+    )
+
+    val categorySumMap = courseList.filterNotNull().groupBy { it.category }.mapValues { entry ->
+        entry.value.sumOf { it.amount.toInt() }
+    }
+
+    val chartValues: List<Float> = categorySumMap.values.map { it.toFloat() }
+    val labels: List<String> = categorySumMap.keys.toList()
+
+    BarChart(
+        modifier = Modifier.padding(20.dp),
+        colors = chartColors.take(chartValues.size),
+        inputValues = chartValues,
+        labels = labels,
+        textColor = MaterialTheme.colorScheme.primary
+    )
+}
+
 
 @Preview(showBackground = true)
 @Composable

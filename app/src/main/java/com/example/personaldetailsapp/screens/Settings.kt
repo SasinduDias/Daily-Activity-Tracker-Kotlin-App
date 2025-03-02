@@ -1,3 +1,4 @@
+import android.app.AlertDialog
 import android.text.TextUtils
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -5,20 +6,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,9 +44,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.personaldetailsapp.AuthState
 import com.example.personaldetailsapp.AuthViewModel
 import com.example.personaldetailsapp.MainActivity
 import com.example.personaldetailsapp.R
+import es.dmoral.toasty.Toasty
 
 @Composable
 fun SettingScreen(
@@ -50,9 +59,10 @@ fun SettingScreen(
     val context = LocalContext.current
     val networkObserver = remember { NetworkObserver(context) }
     val isConnected by networkObserver.isConnected.observeAsState(false)
+    val authState = authViewModel.authState.observeAsState()
+    var openAlertDialog by remember { mutableStateOf(false) }
 
     Column(
-        verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .padding(16.dp)
@@ -60,99 +70,176 @@ fun SettingScreen(
             .fillMaxWidth()
     ) {
 
+       if (authState.value is AuthState.Authenticated) {
         Button(modifier = Modifier
             .padding(16.dp)
             .align(Alignment.End),
             onClick = {
-                authViewModel.signout()
-                navController.navigate(MainActivity.Routes.SignIn.name)
+                openAlertDialog = true
             }
         ) {
             Text(text = "Logout")
         }
 
-        Image(
-            modifier = Modifier
-                .clip(shape = CircleShape)
-                .width(100.dp)
-                .height(100.dp),
-            painter = painterResource(R.drawable.happy_cook),
-            contentDescription = ""
-        )
+           if (openAlertDialog) {
+               AlertDialogExample(
+                   onDismissRequest = { openAlertDialog = false },
+                   onConfirmation = {
+                       openAlertDialog = false
+                       authViewModel.signout()
+                       navController.navigate(MainActivity.Routes.SignIn.name) // Navigate after logout
+                   },
+                   dialogTitle = "Logout Confirmation",
+                   dialogText = "Are you sure you want to logout?",
+                   icon = Icons.Default.Info
+               )
+           }
+       }
 
-        Spacer(Modifier.width(25.dp))
 
-        Text(
-            text = "Forgot Your Password?", color = Color.Black, fontWeight = FontWeight.Bold,
-            fontSize = 24.sp
-        )
 
-        Spacer(Modifier.width(20.dp))
 
-        Text(
-            text = "Enter your email address and we will send you \n instructions to reset your password",
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(10.dp),
-            color = Color.Blue,
-            fontSize = 18.sp
-        )
+        Column (
+            modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                modifier = Modifier
+                    .clip(shape = CircleShape)
+                    .width(100.dp)
+                    .height(100.dp),
+                painter = painterResource(R.drawable.happy_cook),
+                contentDescription = ""
+            )
 
-        Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                modifier = Modifier.paddingFromBaseline(top =50.dp),
+                text = "Forgot Your Password?", color = Color.Black, fontWeight = FontWeight.Bold,
+                fontSize = 24.sp
+            )
 
-        OutlinedTextField(
-            value = selectedEmailAddress,
-            modifier = Modifier
-                .height(60.dp)
-                .fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-            ),
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Email,
-                    contentDescription = "forget password mail"
-                )
-            },
-            onValueChange = { selectedEmailAddress = it },
-            placeholder = { Text("Email") },
-        )
+            Spacer(Modifier.width(20.dp))
 
-        Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "Enter your email address and we will send you \n instructions to reset your password",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(10.dp),
+                fontSize = 18.sp
+            )
 
-        Button(
-            onClick = {
+            Spacer(modifier = Modifier.height(20.dp))
 
-                if (TextUtils.isEmpty(selectedEmailAddress)) {
-                    Toast.makeText(context, "Please add your email !", Toast.LENGTH_SHORT)
-                        .show()
-                } else {
-                    if (isConnected) {
-                        authViewModel.sendEmailVerification(selectedEmailAddress, context)
+            OutlinedTextField(
+                value = selectedEmailAddress,
+                modifier = Modifier
+                    .height(60.dp)
+                    .fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                ),
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Email,
+                        contentDescription = "forget password mail"
+                    )
+                },
+                onValueChange = { selectedEmailAddress = it },
+                placeholder = { Text("Email") },
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = {
+
+                    if (TextUtils.isEmpty(selectedEmailAddress)) {
+                        Toasty.warning(
+                            context,
+                            "Please add your email !",
+                            Toast.LENGTH_SHORT,
+                            true
+                        ).show()
                     } else {
-                        Toast.makeText(context, "No Internet Connection", Toast.LENGTH_SHORT).show()
+                        if (isConnected) {
+                            authViewModel.sendEmailVerification(selectedEmailAddress, context)
+                        } else {
+                            Toasty.warning(
+                                context,
+                                "No Internet Connection !",
+                                Toast.LENGTH_SHORT,
+                                true
+                            ).show()
+                        }
+
                     }
 
-                }
+                },
 
-            },
-
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // on below line we are adding text for our button
-            Text(text = "Continue", fontSize = 18.sp, modifier = Modifier.padding(8.dp))
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        TextButton(
-            onClick = {
-                navController.navigate(MainActivity.Routes.SignIn.name)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // on below line we are adding text for our button
+                Text(text = "Continue", fontSize = 18.sp, modifier = Modifier.padding(8.dp))
             }
-        ) {
-            Text(text = "Back to the login screen", fontSize = 18.sp, color = Color.Black)
+
+
+          if (authState.value is AuthState.Unauthenticated) {
+            TextButton(
+                modifier = Modifier.paddingFromBaseline(top =50.dp),
+                onClick = {
+                    navController.navigate(MainActivity.Routes.SignIn.name)
+                }
+            ) {
+                Text(text = "Back to the login screen", fontSize = 18.sp)
+            }
+       }
+
         }
+
     }
 
+}
+
+@Composable
+fun AlertDialogExample(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    dialogTitle: String,
+    dialogText: String,
+    icon: ImageVector,
+) {
+    AlertDialog(
+        icon = {
+            Icon(icon, contentDescription = "Example Icon")
+        },
+        title = {
+            Text(text = dialogTitle)
+        },
+        text = {
+            Text(text = dialogText)
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Dismiss")
+            }
+        }
+    )
 }

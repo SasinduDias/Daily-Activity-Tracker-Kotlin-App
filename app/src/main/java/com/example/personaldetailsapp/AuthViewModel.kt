@@ -1,18 +1,14 @@
 package com.example.personaldetailsapp
 
-import NetworkObserver
+
 import android.content.Context
-import android.net.Uri
 import android.widget.Toast
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import es.dmoral.toasty.Toasty
 
 class AuthViewModel : ViewModel() {
 
@@ -20,10 +16,11 @@ class AuthViewModel : ViewModel() {
     private val _authState = MutableLiveData<AuthState>()
     val authState: LiveData<AuthState> = _authState
 
-    val firebaseUser: FirebaseUser? = auth.currentUser
+    var firebaseUser: FirebaseUser? = auth.currentUser
 
     init {
         checkAuthStatus()
+        firebaseUser = auth.currentUser
     }
 
 
@@ -80,12 +77,22 @@ class AuthViewModel : ViewModel() {
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         _authState.value = AuthState.Unauthenticated
-                        Toast.makeText(context, "Password reset link send to email!", Toast.LENGTH_SHORT)
-                            .show()
+                        Toasty.success(
+                            context,
+                            "Password reset link send to email !",
+                            Toast.LENGTH_SHORT,
+                            true
+                        ).show()
                     } else {
                         _authState.value =
                             AuthState.Error(task.exception?.message ?: "Failed to send verification email")
-                        Toast.makeText(context, "Please check, something went wrong !", Toast.LENGTH_SHORT).show()
+
+                        Toasty.error(
+                            context,
+                            "Please check your internet connection !",
+                            Toast.LENGTH_SHORT,
+                            true
+                        ).show()
                     }
                 }
     }
@@ -94,7 +101,12 @@ class AuthViewModel : ViewModel() {
     fun signout() {
 
         _authState.value = AuthState.Unauthenticated
+        firebaseUser=null
         auth.signOut()
+    }
+
+    fun refreshUser() {
+        firebaseUser = auth.currentUser // Update state when new user logs in
     }
 }
 

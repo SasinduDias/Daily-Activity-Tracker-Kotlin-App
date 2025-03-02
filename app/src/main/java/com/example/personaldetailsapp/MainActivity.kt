@@ -13,6 +13,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -37,10 +38,14 @@ class MainActivity : ComponentActivity() {
         val navController = rememberNavController()
         val authViewModel = AuthViewModel()
 
-
+        LaunchedEffect(Unit) {
+            authViewModel.refreshUser() // Update user state when logging in/out
+        }
         NavHost(
             navController,
-            startDestination = Routes.Splash.name
+            startDestination = if (authViewModel.firebaseUser != null)
+                Routes.Splash.name
+            else Routes.SignIn.name
         )
         {
             composable(route = Routes.SignIn.name) {

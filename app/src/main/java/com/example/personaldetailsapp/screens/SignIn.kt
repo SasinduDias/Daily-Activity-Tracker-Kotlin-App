@@ -44,13 +44,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.personaldetailsapp.AuthState
 import com.example.personaldetailsapp.AuthViewModel
 import com.example.personaldetailsapp.MainActivity
 import com.example.personaldetailsapp.R
+import es.dmoral.toasty.Toasty
 
 
 @Composable
@@ -108,11 +112,13 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
                 LaunchedEffect(authState.value) {
                     when (authState.value) {
                         is AuthState.Authenticated -> navController.navigate(MainActivity.Routes.Home.name)
-                        is AuthState.Error -> Toast.makeText(
+                        is AuthState.Error ->
+                        Toasty.error(
                             context,
-                            (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
+                            (authState.value as AuthState.Error).message,
+                            Toast.LENGTH_SHORT,
+                            true
                         ).show()
-
                         else -> Unit
                     }
                 }
@@ -137,7 +143,12 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
                         if (isConnected) {
                             authViewModel.login(email.value, password.value)
                         }else{
-                            Toast.makeText(context, "No Internet Connection", Toast.LENGTH_SHORT).show()
+                            Toasty.warning(
+                                context,
+                                "No Internet Connection",
+                                Toast.LENGTH_SHORT,
+                                true
+                            ).show()
                         }
                     },
                     enabled = authState.value != AuthState.Loading,
@@ -246,7 +257,10 @@ fun TextField(
 @Composable
 fun SignInHeader() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Welcome Back", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
+        Text(text = "Welcome", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center)
+        Text(text = "Back", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center)
         Text(text = "Login to continue", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
     }
 }
