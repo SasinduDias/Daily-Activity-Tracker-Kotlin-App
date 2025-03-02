@@ -1,4 +1,5 @@
 sample daily expenses track app.
+authenticate with firebase
 language - kotlin
 screens 
 1. login
@@ -6,3 +7,4 @@ screens
 3. home
 4. settings
 5. splash
+
