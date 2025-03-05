@@ -21,6 +21,7 @@ import com.example.personaldetailsapp.ui.theme.PersonalDetailsAppTheme
 
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

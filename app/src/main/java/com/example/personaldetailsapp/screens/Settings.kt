@@ -1,8 +1,8 @@
-import android.app.AlertDialog
 import android.text.TextUtils
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -24,7 +24,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -33,9 +32,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +63,18 @@ fun SettingScreen(
     val authState = authViewModel.authState.observeAsState()
     var openAlertDialog by remember { mutableStateOf(false) }
 
+    if (authState.value is AuthState.Unauthenticated) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(R.drawable.background_four),
+                contentDescription = "",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(7.dp),
+            )
+        }
+    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -70,36 +83,34 @@ fun SettingScreen(
             .fillMaxWidth()
     ) {
 
-       if (authState.value is AuthState.Authenticated) {
-        Button(modifier = Modifier
-            .padding(16.dp)
-            .align(Alignment.End),
-            onClick = {
-                openAlertDialog = true
+        if (authState.value is AuthState.Authenticated) {
+            Button(modifier = Modifier
+                .padding(16.dp)
+                .align(Alignment.End),
+                onClick = {
+                    openAlertDialog = true
+                }
+            ) {
+                Text(text = "Logout")
             }
-        ) {
-            Text(text = "Logout")
+
+            if (openAlertDialog) {
+                AlertDialogExample(
+                    onDismissRequest = { openAlertDialog = false },
+                    onConfirmation = {
+                        openAlertDialog = false
+                        authViewModel.signout()
+                        navController.navigate(MainActivity.Routes.SignIn.name) // Navigate after logout
+                    },
+                    dialogTitle = "Log Out",
+                    dialogText = "Are you sure you want to log out?",
+                    icon = Icons.Default.Info
+                )
+            }
         }
 
-           if (openAlertDialog) {
-               AlertDialogExample(
-                   onDismissRequest = { openAlertDialog = false },
-                   onConfirmation = {
-                       openAlertDialog = false
-                       authViewModel.signout()
-                       navController.navigate(MainActivity.Routes.SignIn.name) // Navigate after logout
-                   },
-                   dialogTitle = "Logout Confirmation",
-                   dialogText = "Are you sure you want to logout?",
-                   icon = Icons.Default.Info
-               )
-           }
-       }
 
-
-
-
-        Column (
+        Column(
             modifier = Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -109,13 +120,15 @@ fun SettingScreen(
                     .clip(shape = CircleShape)
                     .width(100.dp)
                     .height(100.dp),
-                painter = painterResource(R.drawable.happy_cook),
+                painter = painterResource(R.drawable.logo),
                 contentDescription = ""
             )
 
             Text(
-                modifier = Modifier.paddingFromBaseline(top =50.dp),
-                text = "Forgot Your Password?", color = Color.Black, fontWeight = FontWeight.Bold,
+                modifier = Modifier.paddingFromBaseline(top = 50.dp),
+                text = "Forgot Your Password?",
+                color = Color.Black,
+                fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
             )
 
@@ -185,22 +198,22 @@ fun SettingScreen(
             }
 
 
-          if (authState.value is AuthState.Unauthenticated) {
-            TextButton(
-                modifier = Modifier.paddingFromBaseline(top =50.dp),
-                onClick = {
-                    navController.navigate(MainActivity.Routes.SignIn.name)
+            if (authState.value is AuthState.Unauthenticated) {
+                TextButton(
+                    modifier = Modifier.paddingFromBaseline(top = 50.dp),
+                    onClick = {
+                        navController.navigate(MainActivity.Routes.SignIn.name)
+                    }
+                ) {
+                    Text(text = "Back to the login screen", fontSize = 18.sp)
                 }
-            ) {
-                Text(text = "Back to the login screen", fontSize = 18.sp)
             }
-       }
 
         }
 
     }
-
 }
+
 
 @Composable
 fun AlertDialogExample(
@@ -229,7 +242,7 @@ fun AlertDialogExample(
                     onConfirmation()
                 }
             ) {
-                Text("Confirm")
+                Text("Yes")
             }
         },
         dismissButton = {
@@ -238,7 +251,7 @@ fun AlertDialogExample(
                     onDismissRequest()
                 }
             ) {
-                Text("Dismiss")
+                Text("Cancel")
             }
         }
     )

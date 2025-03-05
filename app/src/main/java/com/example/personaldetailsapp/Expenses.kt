@@ -5,5 +5,6 @@ data class Expenses(
     var email: String="",
     var description: String="",
     var date:String="",
-    var category:String=""
+    var category:String="",
+    var documentReference:String=""
 )

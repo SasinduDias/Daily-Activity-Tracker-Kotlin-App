@@ -63,7 +63,7 @@ fun SignUpScreen(navController:NavController, authViewModel: AuthViewModel) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(R.drawable.happy_cook),
+            painter = painterResource(R.drawable.signin),
             contentDescription = "background image",
             modifier = Modifier
                 .fillMaxSize()

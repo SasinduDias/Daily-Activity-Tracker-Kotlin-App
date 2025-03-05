@@ -1,5 +1,6 @@
 import android.content.Context
 import android.text.TextUtils
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -28,14 +29,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.NoteAlt
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.NoteAlt
 import androidx.compose.material.icons.outlined.Settings
@@ -47,6 +52,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
@@ -64,6 +70,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -99,6 +106,7 @@ import com.example.personaldetailsapp.R
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import es.dmoral.toasty.Toasty
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -111,7 +119,6 @@ fun HomeScreen(
     authViewModel: AuthViewModel
 ) {
     val authState = authViewModel.authState.observeAsState()
-
     // Redirect to Sign-In screen if user is not authenticated
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
@@ -137,7 +144,7 @@ fun HomeScreen(
         ) {
             when (selectedItem) {
                 0 -> HomeContent(authViewModel)
-                1 -> SummaryContent(authViewModel)
+                1 -> SummaryContent()
                 2 -> SettingContent(authViewModel, navController)
             }
         }
@@ -161,7 +168,7 @@ fun HomeContent(authViewModel: AuthViewModel) {
 
         //note image
         Image(
-            painter = painterResource(R.drawable.notes),
+            painter = painterResource(R.drawable.background_two),
             contentDescription = "background image",
             modifier = Modifier
                 .fillMaxSize(),
@@ -198,7 +205,7 @@ fun HomeContent(authViewModel: AuthViewModel) {
             onValueChange = { expenseAmount = it },
             placeholder = { Text(text = "Please enter expense amount") },
             trailingIcon = {
-                Icon(Icons.Default.Money, contentDescription = "Amount")
+                Icon(Icons.Default.CreditCard, contentDescription = "Amount")
             },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Decimal,
@@ -307,11 +314,24 @@ fun addDataToFirebase(
         selectedCategoryText
     )
 
-    dbCourses.add(courses).addOnSuccessListener {
+    dbCourses.add(courses).addOnSuccessListener { documentReference ->
+        val documentId = documentReference.id
+
+        documentReference.update("documentReference", documentId)
+            .addOnSuccessListener {
+                Toasty.success(
+                    context,
+                    "Expenses details has been added !",
+                    Toast.LENGTH_SHORT,
+                    true
+                )
+                    .show()
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error updating document ID: $e")
+            }
 
 
-        Toasty.success(context, "Expenses details has been added !", Toast.LENGTH_SHORT, true)
-            .show()
         //set empty string to itext fields
         onSuccess()
 
@@ -427,8 +447,10 @@ fun SettingContent(authViewModel: AuthViewModel, navController: NavController) {
 }
 
 @Composable
-fun SummaryContent(authViewModel: AuthViewModel) {
+fun SummaryContent() {
     val authViewModelForUser = AuthViewModel()
+    var barChartSelected by remember { mutableStateOf(true) }
+
     Column(
         modifier = Modifier
             .padding(16.dp, 16.dp),
@@ -437,7 +459,7 @@ fun SummaryContent(authViewModel: AuthViewModel) {
     ) {
         Text(
             "Expenses Summary",
-            color = Color.Black,
+            color = Color.Blue,
             fontFamily = FontFamily.SansSerif,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
@@ -470,18 +492,77 @@ fun SummaryContent(authViewModel: AuthViewModel) {
                 }
         }
 
-        // on below line we are calling method to display UI
+        LaunchedEffect(barChartSelected, courseList) {
+
+        }
         if (!courseList.isEmpty()) {
-            //  setupGraphs(authViewModel, courseList)
-            setupBarChart(authViewModel, courseList)
+
+            //chart selected buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(
+                    onClick = {
+                        barChartSelected = true
+                    }
+                ) {
+                    when (barChartSelected) {
+                        true -> Icon(
+                            imageVector = Icons.Filled.BarChart,
+                            contentDescription = "Bar Chart",
+                            tint = Color.Blue
+                        )
+
+                        else -> Icon(
+                            imageVector = Icons.Default.BarChart,
+                            contentDescription = "Bar Chart",
+                            tint = Color.Black
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(10.dp))
+
+                IconButton(
+                    onClick = {
+                        barChartSelected = false
+                    }
+                ) {
+                    when (barChartSelected) {
+                        true -> Icon(
+                            imageVector = Icons.Default.PieChart,
+                            contentDescription = "Pie Chart",
+                            tint = Color.Black
+                        )
+
+                        else -> Icon(
+                            imageVector = Icons.Filled.PieChart,
+                            contentDescription = "Pie Chart",
+                            tint = Color.Blue
+                        )
+                    }
+
+                }
+            }
+
+
+
+            when (barChartSelected) {
+                true -> SetupBarChart(courseList)
+                else -> SetupGraphs(courseList)
+            }
             firebaseUI(LocalContext.current, courseList)
         }
-
     }
+
 }
 
+
 @Composable
-fun setupGraphs(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expenses?>) {
+fun SetupGraphs(courseList: SnapshotStateList<Expenses?>) {
 
     val chartColors = listOf(
 
@@ -515,7 +596,8 @@ fun setupGraphs(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expe
 
 @Composable
 fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
-
+    val coroutineScope = rememberCoroutineScope()
+    var openAlertDialog by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -529,11 +611,7 @@ fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
             itemsIndexed(courseList) { index, item ->
                 Card(
                     onClick = {
-//                        Toast.makeText(
-//                            context,
-//                            courseList[index]?.description + " selected..",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
+
                     },
 
                     modifier = Modifier.padding(8.dp),
@@ -547,15 +625,55 @@ fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
                         Spacer(modifier = Modifier.width(5.dp))
 
                         courseList[index]?.description?.let {
-                            Text(
-                                text = it,
-                                modifier = Modifier.padding(4.dp),
-                                color = Color.Black,
-                                textAlign = TextAlign.Center,
-                                style = TextStyle(
-                                    fontSize = 20.sp, fontWeight = FontWeight.Bold
+
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.padding(4.dp),
+                                    color = Color.Black,
+                                    textAlign = TextAlign.Center,
+                                    style = TextStyle(
+                                        fontSize = 20.sp, fontWeight = FontWeight.Bold
+                                    )
                                 )
-                            )
+                                IconButton(
+                                    onClick = {
+                                        openAlertDialog = true
+                                    },
+                                )
+                                {
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = "Delete",
+                                        tint = Color.Black
+                                    )
+
+                                    if (openAlertDialog) {
+                                        AlertDialogExample(
+                                            onDismissRequest = { openAlertDialog = false },
+                                            onConfirmation = {
+                                                openAlertDialog = false
+                                                coroutineScope.launch {
+                                                    DeleteItem(
+                                                        courseList,
+                                                        courseList[index],
+                                                        context
+                                                    )
+                                                }
+                                            },
+                                            dialogTitle = "Warning",
+                                            dialogText = "Are you sure you want to remove this item?",
+                                            icon = Icons.Default.Warning
+                                        )
+                                    }
+                                }
+                            }
+
+
                         }
 
                         Spacer(modifier = Modifier.height(5.dp))
@@ -649,6 +767,42 @@ fun firebaseUI(context: Context, courseList: SnapshotStateList<Expenses?>) {
             }
         }
     }
+}
+
+
+suspend fun DeleteItem(
+    courseList: SnapshotStateList<Expenses?>,
+    expenses: Expenses?,
+    context: Context
+) {
+
+    val db = FirebaseFirestore.getInstance()
+
+    expenses?.documentReference?.let { documentReference ->
+
+        db.collection("Expenses")
+            .document(documentReference)
+            .delete()
+            .addOnSuccessListener {
+
+                Toasty.success(context, "Expense successfully deleted!", Toast.LENGTH_SHORT)
+                    .show()
+                courseList.remove(expenses)
+            }
+            .addOnFailureListener { e ->
+
+                Toasty.error(
+                    context,
+                    "Failed to delete expense: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+    } ?: run {
+
+        Toasty.error(context, "Expense data is missing or invalid.", Toast.LENGTH_SHORT).show()
+    }
+
+
 }
 
 
@@ -833,9 +987,11 @@ fun BarChart(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Canvas(modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+        ) {
             val barWidth = size.width / (inputValues.size * 2)
             val maxHeight = size.height
 
@@ -864,7 +1020,8 @@ fun BarChart(
 }
 
 @Composable
-fun setupBarChart(authViewModel: AuthViewModel, courseList: SnapshotStateList<Expenses?>) {
+fun SetupBarChart(courseList: SnapshotStateList<Expenses?>) {
+
     val chartColors = listOf(
         Color(0xFF2196F3), // Blue
         Color(0xFFFF9800), // Orange
@@ -897,5 +1054,5 @@ fun setupBarChart(authViewModel: AuthViewModel, courseList: SnapshotStateList<Ex
 @Preview(showBackground = true)
 @Composable
 fun PreviewHomeScreen() {
-    // Mocking HomeScreen for preview (without NavController)
+
 }

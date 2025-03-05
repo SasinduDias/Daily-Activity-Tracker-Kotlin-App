@@ -39,15 +39,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.SemanticsProperties.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.personaldetailsapp.AuthState
@@ -61,13 +58,13 @@ import es.dmoral.toasty.Toasty
 fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
 
     val scrollState = rememberScrollState()
-    var context:Context = LocalContext.current
+    var context: Context = LocalContext.current
     val networkObserver = remember { NetworkObserver(context) }
     val isConnected by networkObserver.isConnected.observeAsState(false)
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(R.drawable.happy_cook),
+            painter = painterResource(R.drawable.signin),
             contentDescription = "background image",
             modifier = Modifier
                 .fillMaxSize()
@@ -78,7 +75,9 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
 
     Column(
         modifier = Modifier
-            .padding(10.dp).fillMaxWidth().fillMaxHeight()
+            .padding(10.dp)
+            .fillMaxWidth()
+            .fillMaxHeight()
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -113,12 +112,13 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
                     when (authState.value) {
                         is AuthState.Authenticated -> navController.navigate(MainActivity.Routes.Home.name)
                         is AuthState.Error ->
-                        Toasty.error(
-                            context,
-                            (authState.value as AuthState.Error).message,
-                            Toast.LENGTH_SHORT,
-                            true
-                        ).show()
+                            Toasty.error(
+                                context,
+                                (authState.value as AuthState.Error).message,
+                                Toast.LENGTH_SHORT,
+                                true
+                            ).show()
+
                         else -> Unit
                     }
                 }
@@ -142,7 +142,7 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
                     onSignInClick = {
                         if (isConnected) {
                             authViewModel.login(email.value, password.value)
-                        }else{
+                        } else {
                             Toasty.warning(
                                 context,
                                 "No Internet Connection",
@@ -170,7 +170,7 @@ fun LoginFooter(
 ) {
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = onSignInClick, modifier = Modifier.fillMaxWidth(),enabled= enabled) {
+        Button(onClick = onSignInClick, modifier = Modifier.fillMaxWidth(), enabled = enabled) {
             Text(text = "Sign In")
         }
         TextButton(onClick = onSignUpClick) {
@@ -257,10 +257,14 @@ fun TextField(
 @Composable
 fun SignInHeader() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Welcome", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center)
-        Text(text = "Back", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center)
+        Text(
+            text = "Welcome", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "Back", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center
+        )
         Text(text = "Login to continue", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
     }
 }
